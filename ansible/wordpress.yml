@@ -1,0 +1,54 @@
+---
+- name: Installer WordPress sur Ubuntu
+  hosts: wordpress
+  become: true
+  tasks:
+    - name: Mettre à jour apt
+      apt:
+        update_cache: yes
+
+    - name: Installer Apache, MySQL et PHP
+      apt:
+        name:
+          - apache2
+          - mysql-server
+          - php
+          - php-mysql
+          - libapache2-mod-php
+          - wget
+        state: present
+
+    - name: Démarrer et activer Apache
+      systemd:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Configurer MySQL root password
+      mysql_user:
+        login_user: root
+        login_password: ''
+        name: root
+        host_all: yes
+        password: 'rootpass'
+        state: present
+
+    - name: Créer base de données WordPress
+      mysql_db:
+        name: wordpress
+        state: present
+        login_user: root
+        login_password: 'rootpass'
+
+    - name: Télécharger WordPress
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /var/www/html/
+        remote_src: yes
+
+    - name: Configurer les permissions
+      file:
+        path: /var/www/html/wordpress
+        owner: www-data
+        group: www-data
+        recurse: yes
